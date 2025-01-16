@@ -1,12 +1,18 @@
-// app/api/oauth/route.ts
+// app/api/oauth/callback/route.ts
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    const { code } = await request.json();
+    const url = new URL(request.url);
+    const code = url.searchParams.get("code");
+    if (!code) {
+      // codeが無い場合はホーム画面へ飛ばすなど
+      return NextResponse.redirect("/");
+    }
+
     const clientId = process.env.POLAR_CLIENT_ID!;
     const clientSecret = process.env.POLAR_CLIENT_SECRET!;
-    const redirectUri = process.env.POLAR_REDIRECT_URI!;
+    const redirectUri = `${process.env.POLAR_REDIRECT_URI}`;
 
     const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
@@ -15,6 +21,7 @@ export async function POST(request: Request) {
     params.append("code", code);
     params.append("redirect_uri", redirectUri);
 
+    // Polarからアクセストークン取得
     const res = await fetch("https://polarremote.com/v2/oauth2/token", {
       method: "POST",
       headers: {
@@ -24,22 +31,34 @@ export async function POST(request: Request) {
       },
       body: params,
     });
-
     if (!res.ok) {
       const errorText = await res.text();
       console.error("Polar OAuth Error:", errorText);
-      return NextResponse.json({ error: "Failed to get token" }, { status: 400 });
+      return NextResponse.redirect("/?error=polar_auth_failed");
     }
 
     const tokenResponse = await res.json();
-    // { access_token, x_user_id, ... }
+    // 例: { access_token, x_user_id, token_type, expires_in, ... }
 
-    return NextResponse.json({
-      access_token: tokenResponse.access_token,
-      x_user_id: tokenResponse.x_user_id,
+    // ここでアクセストークンやx_user_idを保存する必要がある
+    // === 「サーバーサイドのセッション or Cookie or DB」などに格納 ===
+    // 今回はシンプルにCookieに入れてみる例 (JWTではなく生値に注意)
+    // (安全性を考慮するならHTTPOnly Cookieなどで保護)
+    const response = NextResponse.redirect("/mypage");
+    response.cookies.set("polar_access_token", tokenResponse.access_token, {
+      httpOnly: true,
+      path: "/",
+      maxAge: 3600, // 1時間 etc.
     });
-  } catch (error: any) {
+    response.cookies.set("polar_x_user_id", String(tokenResponse.x_user_id), {
+      httpOnly: true,
+      path: "/",
+      maxAge: 3600,
+    });
+
+    return response;
+  } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.redirect("/?error=unknown");
   }
 }
