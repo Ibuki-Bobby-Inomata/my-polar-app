@@ -7,6 +7,7 @@ export async function POST(request: Request) {
     const clientId = process.env.POLAR_CLIENT_ID!;
     const clientSecret = process.env.POLAR_CLIENT_SECRET!;
     const redirectUri = process.env.POLAR_REDIRECT_URI!;
+    console.log("Received code:", code); // デバッグ用ログ
 
     const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
       body: params,
     });
 
+    console.log("Received token?:", res.json());
+
     if (!res.ok) {
       const errorText = await res.text(); // エラー内容を取得
       console.error("Polar OAuth Error:", errorText);
@@ -39,6 +42,7 @@ export async function POST(request: Request) {
       access_token: tokenResponse.access_token,
       x_user_id: tokenResponse.x_user_id,
     });
+
   } catch (error: unknown) {
     console.error("API Error:", error);
     return NextResponse.json(
