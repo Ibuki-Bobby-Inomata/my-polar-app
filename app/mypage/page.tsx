@@ -1,36 +1,50 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
+export const dynamic = "force-dynamic"; // ★ 静的生成を無効化
 
-export default async function MyPage() {
-    // cookies() が Promise を返す場合があるため、await する
-    const store = await cookies();
-    const accessToken = store.get("polar_access_token")?.value;
-    const xUserId = store.get("polar_x_user_id")?.value;
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-    if (!accessToken || !xUserId) {
-        // 未ログイン状態なのでトップへ飛ばす、など適切に対応
-        redirect("/");
+export default function MyPage() {
+    const [userInfo, setUserInfo] = useState<any>(null);
+    const router = useRouter();
+
+    useEffect(() => {
+        const access_token = sessionStorage.getItem("access_token");
+        const x_user_id = sessionStorage.getItem("x_user_id");
+        if (!access_token || !x_user_id) {
+            // トークン無い → ホームへ
+            router.push("/");
+            return;
+        }
+
+        // /api/user にアクセスし Polarユーザー情報をGET
+        fetch("/api/user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ access_token, x_user_id }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.error) throw new Error(data.error);
+                setUserInfo(data.userInfo);
+            })
+            .catch((err) => {
+                console.error(err);
+            });
+    }, [router]);
+
+    if (!userInfo) {
+        return <p className="p-4">読み込み中...</p>;
     }
-
-    // Polar AccessLinkからユーザー情報取得
-    const userRes = await fetch(`https://www.polaraccesslink.com/v3/users/${xUserId}`, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    });
-    if (!userRes.ok) {
-        // 失敗 → ホームへ
-        redirect("/?error=user_info_failed");
-    }
-    const userInfo = await userRes.json();
 
     return (
-        <div className="max-w-md w-full bg-white p-6 rounded shadow text-gray-800">
+        <div className="max-w-md bg-white p-6 rounded shadow">
             <h2 className="text-xl font-bold mb-4">マイページ</h2>
             <ul className="space-y-2">
                 <li>登録日: {userInfo["registration-date"] || "N/A"}</li>
-                <li>名前: {userInfo["first-name"]} {userInfo["last-name"]}</li>
+                <li>
+                    名前: {userInfo["first-name"]} {userInfo["last-name"]}
+                </li>
                 <li>誕生日: {userInfo.birthdate || "N/A"}</li>
                 <li>性別: {userInfo.gender || "N/A"}</li>
             </ul>
