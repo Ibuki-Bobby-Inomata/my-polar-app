@@ -1,15 +1,13 @@
-// app/mypage/page.tsx
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function MyPage() {
-    // サーバーコンポーネントでCookie取得
-    const store = cookies();
+    const store = await cookies();  // ここで Promise を解決する
+
     const accessToken = store.get("polar_access_token")?.value;
     const xUserId = store.get("polar_x_user_id")?.value;
 
     if (!accessToken || !xUserId) {
-        // 未ログインなのでホームへリダイレクト
         redirect("/");
     }
 
