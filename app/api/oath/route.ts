@@ -1,13 +1,17 @@
-// app/api/oauth/route.ts
-
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
     try {
-        const { code } = await request.json();
+        const url = new URL(request.url);
+        const code = url.searchParams.get("code");
+        if (!code) {
+            return NextResponse.redirect("/");
+        }
+
+        // Polar OAuth
         const clientId = process.env.POLAR_CLIENT_ID!;
         const clientSecret = process.env.POLAR_CLIENT_SECRET!;
-        const redirectUri = process.env.POLAR_REDIRECT_URI!;
+        const redirectUri = "https://yourdomain.vercel.app/api/oauth/callback";
 
         const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
@@ -16,7 +20,7 @@ export async function POST(request: Request) {
         params.append("code", code);
         params.append("redirect_uri", redirectUri);
 
-        const res = await fetch("https://polarremote.com/v2/oauth2/token", {
+        const polarRes = await fetch("https://polarremote.com/v2/oauth2/token", {
             method: "POST",
             headers: {
                 Authorization: `Basic ${basicAuth}`,
@@ -25,24 +29,30 @@ export async function POST(request: Request) {
             },
             body: params,
         });
-
-        if (!res.ok) {
-            const errorText = await res.text();
-            console.error("Polar OAuth Error:", errorText);
-            return NextResponse.json({ error: "Failed to get token" }, { status: 400 });
+        if (!polarRes.ok) {
+            console.error(await polarRes.text());
+            return NextResponse.redirect("/?error=polar_token_failed");
         }
 
-        const tokenResponse = await res.json();
-        return NextResponse.json({
-            access_token: tokenResponse.access_token,
-            x_user_id: tokenResponse.x_user_id,
+        const tokenJson = await polarRes.json();
+        // { access_token, x_user_id, ... }
+
+        // Cookieに保存してマイページへリダイレクト
+        const response = NextResponse.redirect("/mypage");
+        response.cookies.set("polar_access_token", tokenJson.access_token, {
+            path: "/",
+            httpOnly: true,
+            maxAge: 3600,
         });
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error(error.message);
-        } else {
-            console.error(error);
-        }
-        return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+        response.cookies.set("polar_x_user_id", String(tokenJson.x_user_id), {
+            path: "/",
+            httpOnly: true,
+            maxAge: 3600,
+        });
+
+        return response;
+    } catch (e) {
+        console.error(e);
+        return NextResponse.redirect("/?error=unknown");
     }
 }
