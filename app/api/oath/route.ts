@@ -26,9 +26,12 @@ export async function POST(request: Request) {
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
+      const errorText = await res.text(); // エラー内容を取得
       console.error("Polar OAuth Error:", errorText);
-      return NextResponse.json({ error: "Failed to get token" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Failed to get token", details: errorText },
+        { status: res.status }
+      );
     }
 
     const tokenResponse = await res.json();
@@ -36,12 +39,11 @@ export async function POST(request: Request) {
       access_token: tokenResponse.access_token,
       x_user_id: tokenResponse.x_user_id,
     });
-  } catch (error: unknown) { // 修正: "any" ではなく "unknown" を使用
-    if (error instanceof Error) {
-      console.error(error.message);
-    } else {
-      console.error(error);
-    }
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  } catch (error: unknown) {
+    console.error("API Error:", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred.", details: String(error) },
+      { status: 500 }
+    );
   }
 }
