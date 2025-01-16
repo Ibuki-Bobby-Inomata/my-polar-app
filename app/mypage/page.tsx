@@ -1,78 +1,61 @@
 // app/mypage/page.tsx
-"use client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+export default async function MyPage() {
+    // サーバーコンポーネントでCookie取得
+    const store = cookies();
+    const accessToken = store.get("polar_access_token")?.value;
+    const xUserId = store.get("polar_x_user_id")?.value;
 
-// Polarユーザー情報の例
-type PolarUserInfo = {
-    "registration-date"?: string;
-    "first-name"?: string;
-    "last-name"?: string;
-    birthdate?: string;
-    gender?: string;
-    // 他に必要なフィールドがあれば追加
-};
+    if (!accessToken || !xUserId) {
+        // 未ログインなのでホームへリダイレクト
+        redirect("/");
+    }
 
-export default function MyPage() {
-    const [userInfo, setUserInfo] = useState<PolarUserInfo | null>(null);
-    const router = useRouter();
-
-    useEffect(() => {
-        const access_token = sessionStorage.getItem("access_token");
-        const x_user_id = sessionStorage.getItem("x_user_id");
-
-        if (!access_token || !x_user_id) {
-            router.push("/");
-            return;
+    // Polarからユーザー情報を取得
+    const userInfo = await fetch(
+        `https://www.polaraccesslink.com/v3/users/${xUserId}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
         }
-
-        fetch("/api/user", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ access_token, x_user_id }),
-        })
-            .then((res) => res.json())
-            .then((data: { userInfo?: PolarUserInfo; error?: string }) => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                setUserInfo(data.userInfo || null);
-            })
-            .catch((err: unknown) => {
-                console.error(err);
-            });
-    }, [router]);
+    ).then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+    });
 
     if (!userInfo) {
-        return (
-            <div className="text-center">
-                <p>ユーザー情報を読み込み中...</p>
-            </div>
-        );
+        // 失敗したらエラー表示 or リダイレクト
+        redirect("/?error=user_info_failed");
     }
+
+    // userInfo例: {
+    //   "registration-date": "2022-10-01",
+    //   "first-name": "Taro",
+    //   "last-name": "Polar",
+    //   "birthdate": "1990-01-01",
+    //   "gender": "MALE",
+    //   ...
+    // }
 
     return (
         <div className="max-w-md w-full bg-white p-6 rounded shadow text-gray-800">
             <h2 className="text-xl font-bold mb-4">ユーザープロフィール</h2>
             <ul className="space-y-2">
-                <li className="flex justify-between">
-                    <span className="text-gray-500">登録日:</span>
-                    <span>{userInfo["registration-date"] || "N/A"}</span>
+                <li>
+                    <b>登録日:</b> {userInfo["registration-date"]}
                 </li>
-                <li className="flex justify-between">
-                    <span className="text-gray-500">名前:</span>
-                    <span>
-                        {userInfo["first-name"]} {userInfo["last-name"]}
-                    </span>
+                <li>
+                    <b>名前:</b> {userInfo["first-name"]} {userInfo["last-name"]}
                 </li>
-                <li className="flex justify-between">
-                    <span className="text-gray-500">誕生日:</span>
-                    <span>{userInfo.birthdate || "N/A"}</span>
+                <li>
+                    <b>誕生日:</b> {userInfo.birthdate}
                 </li>
-                <li className="flex justify-between">
-                    <span className="text-gray-500">性別:</span>
-                    <span>{userInfo.gender || "N/A"}</span>
+                <li>
+                    <b>性別:</b> {userInfo.gender}
                 </li>
             </ul>
         </div>
