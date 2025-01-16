@@ -1,7 +1,10 @@
-"use client";
+// app/login/page.tsx
 
-import { useSearchParams, useRouter } from "next/navigation";
+"use client";
+export const dynamic = "force-dynamic"; // ★ これを追加してSSGを無効化
+
 import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
     const searchParams = useSearchParams();
@@ -26,14 +29,14 @@ export default function LoginPage() {
                     sessionStorage.setItem("x_user_id", data.x_user_id);
                     router.push("/mypage");
                 })
-                .catch((err) => setError(err.message));
+                .catch((err) => setError(String(err)));
         }
     }, [router, searchParams]);
 
     return (
-        <div className="max-w-lg">
-            <h2 className="text-2xl font-bold mb-4">Polar認可処理中...</h2>
-            {error && <p className="text-red-500">エラー: {error}</p>}
+        <div>
+            <h2>Polar認可処理中...</h2>
+            {error && <p style={{ color: "red" }}>エラー: {error}</p>}
         </div>
     );
 }
