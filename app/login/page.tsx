@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+
 
 export const dynamic = "force-dynamic"; // 静的生成を無効化し、動的レンダリングに変更
 
@@ -49,14 +50,16 @@ export default function LoginPage() {
 
     return (
         <div style={{ textAlign: "center", marginTop: "50px" }}>
-            <h2>Polar認証処理中...</h2>
-            {error && (
-                <p style={{ color: "red", marginTop: "20px" }}>
-                    {error}
-                    <br />
-                    数秒後にホームにリダイレクトされます。
-                </p>
-            )}
+            <Suspense>
+                <h2>Polar認証処理中...</h2>
+                {error && (
+                    <p style={{ color: "red", marginTop: "20px" }}>
+                        {error}
+                        <br />
+                        数秒後にホームにリダイレクトされます。
+                    </p>
+                )}
+            </Suspense>
         </div>
     );
 }
