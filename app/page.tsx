@@ -3,7 +3,7 @@ import React from "react";
 export default function HomePage() {
   // ここで redirectUri を `/api/oauth/callback` に書き換える
   const clientId = process.env.NEXT_PUBLIC_POLAR_CLIENT_ID ?? process.env.POLAR_CLIENT_ID;
-  const redirectUri = "https://yourdomain.vercel.app/api/oauth/callback";
+  const redirectUri = `https://${process.env.POLAR_REDIRECT_URI}.vercel.app/api/oauth/callback`;
   // ↑ Vercel本番URLなどに合わせる
 
   const authorizationUrl = `https://flow.polar.com/oauth2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
