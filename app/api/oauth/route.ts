@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     params.append("code", code);
     params.append("redirect_uri", redirectUri);
 
+    // console.log(code);
+
     const res = await fetch("https://polarremote.com/v2/oauth2/token", {
       method: "POST",
       headers: {
@@ -29,6 +31,8 @@ export async function POST(request: Request) {
       },
       body: params,
     });
+
+    console.log("POST");
 
     if (!res.ok) {
       const errorText = await res.text();
