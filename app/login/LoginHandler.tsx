@@ -1,5 +1,3 @@
-// app/login/LoginHandler.tsx
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -15,29 +13,32 @@ export default function LoginHandler() {
 
         if (!code) {
             setError("認可コードが見つかりません。トップページに戻ります。");
-            setTimeout(() => router.push("/"), 3000); // 3秒後にリダイレクト
+            setTimeout(() => router.push("/"), 3000);
             return;
         }
 
         fetch("/api/oauth", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({ code }),
         })
-            .then((res) => {
+            .then(async (res) => {
                 if (!res.ok) {
-                    throw new Error("トークン取得に失敗しました。");
+                    const errorData = await res.json(); // サーバー側のエラーを取得
+                    throw new Error(errorData.error || "Unknown error occurred");
                 }
                 return res.json();
             })
             .then((data) => {
                 sessionStorage.setItem("access_token", data.access_token);
                 sessionStorage.setItem("x_user_id", data.x_user_id);
-                router.push("/mypage"); // マイページへ移動
+                router.push("/mypage");
             })
             .catch((err) => {
                 console.error(err);
-                setError("認証処理中にエラーが発生しました。");
+                setError(err.message);
             });
     }, [searchParams, router]);
 
