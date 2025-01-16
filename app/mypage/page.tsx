@@ -2,12 +2,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function MyPage() {
-    const store = cookies();
+    // cookies() が Promise を返す場合があるため、await する
+    const store = await cookies();
     const accessToken = store.get("polar_access_token")?.value;
     const xUserId = store.get("polar_x_user_id")?.value;
 
     if (!accessToken || !xUserId) {
-        // Cookieなければ未ログイン → ホームへリダイレクト
+        // 未ログイン状態なのでトップへ飛ばす、など適切に対応
         redirect("/");
     }
 
