@@ -1,6 +1,4 @@
 // app/api/oauth/route.ts
-/* eslint no-unused-vars: 0 */
-
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -34,14 +32,16 @@ export async function POST(request: Request) {
     }
 
     const tokenResponse = await res.json();
-    // { access_token, x_user_id, ... }
-
     return NextResponse.json({
       access_token: tokenResponse.access_token,
       x_user_id: tokenResponse.x_user_id,
     });
-  } catch (error: any) {
-    console.error(error);
+  } catch (error: unknown) { // 修正: "any" ではなく "unknown" を使用
+    if (error instanceof Error) {
+      console.error(error.message);
+    } else {
+      console.error(error);
+    }
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

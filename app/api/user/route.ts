@@ -1,6 +1,4 @@
 // app/api/user/route.ts
-/* eslint no-unused-vars: 0 */
-
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -12,7 +10,6 @@ export async function POST(request: Request) {
             "Content-Type": "application/json",
         };
 
-        // ユーザー登録 (既に登録済みなら 409 返る想定)
         const bodyData = JSON.stringify({ "member-id": "someUserIdInSystem" });
         const regRes = await fetch("https://www.polaraccesslink.com/v3/users", {
             method: "POST",
@@ -25,10 +22,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "User registration failed" }, { status: 400 });
         }
 
-        // Polarユーザー情報GET
         const userInfoRes = await fetch(
             `https://www.polaraccesslink.com/v3/users/${x_user_id}`,
-            { method: "GET", headers: { Authorization: `Bearer ${access_token}` } }
+            { method: "GET", headers }
         );
 
         if (!userInfoRes.ok) {
@@ -39,8 +35,12 @@ export async function POST(request: Request) {
 
         const userInfo = await userInfoRes.json();
         return NextResponse.json({ userInfo });
-    } catch (err: any) {
-        console.error(err);
+    } catch (error: unknown) { // 修正: "any" ではなく "unknown"
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error(error);
+        }
         return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
     }
 }
