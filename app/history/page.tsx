@@ -1,26 +1,35 @@
+// app/history/page.tsx
 "use client";
 
 import React, { useState } from "react";
 
+// Supabaseテーブル 'user_measurements' の行データ型例
+type UserMeasurement = {
+    id: number;
+    polar_user_id: number;
+    measured_at: string;   // UTC string
+    heart_rate?: number | null;
+    temperature?: number | null;
+    created_at?: string | null;
+};
+
 export default function HistoryPage() {
     const [from, setFrom] = useState("2025-01-01");
     const [to, setTo] = useState("2025-01-31");
-    const [records, setRecords] = useState<any[]>([]);
+    const [records, setRecords] = useState<UserMeasurement[]>([]);
 
-    // 本来はログイン中のユーザーIDを使う: sessionStorage.getItem("x_user_id") など
     const [userId, setUserId] = useState("62363341");
 
     const handleSearch = () => {
         fetch(`/api/history?userId=${userId}&from=${from}&to=${to}`)
             .then((res) => res.json())
-            .then((data) => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
+            .then((data: UserMeasurement[]) => {
+                // data は 配列 と想定
                 setRecords(data);
             })
-            .catch((err) => console.error(err));
+            .catch((err: unknown) => {
+                console.error(err);
+            });
     };
 
     return (
@@ -72,8 +81,8 @@ export default function HistoryPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {records.map((row, i) => (
-                            <tr key={i}>
+                        {records.map((row) => (
+                            <tr key={row.id}>
                                 <td className="p-2 border-b">
                                     {new Date(row.measured_at).toLocaleString()}
                                 </td>

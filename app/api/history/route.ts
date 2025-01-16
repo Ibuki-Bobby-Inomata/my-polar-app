@@ -1,19 +1,20 @@
+// app/api/history/route.ts
+
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get("userId"); // x_user_id (polar_user_id)
-        const from = searchParams.get("from");     // e.g. 2025-01-01
-        const to = searchParams.get("to");         // e.g. 2025-01-31
+        const userId = searchParams.get("userId");
+        const from = searchParams.get("from");
+        const to = searchParams.get("to");
 
         if (!userId) {
             return NextResponse.json({ error: "userId is required" }, { status: 400 });
         }
 
         // Supabaseクエリ
-        // from, to が無い場合のデフォルト範囲処理など適宜実装
         const { data, error } = await supabaseAdmin
             .from("user_measurements")
             .select("*")
@@ -28,8 +29,12 @@ export async function GET(request: Request) {
         }
 
         return NextResponse.json(data);
-    } catch (err: any) {
-        console.error(err);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error(error);
+        }
         return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
     }
 }

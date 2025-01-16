@@ -1,3 +1,5 @@
+// app/api/oauth/route.ts
+
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -7,10 +9,8 @@ export async function POST(request: Request) {
         const clientSecret = process.env.POLAR_CLIENT_SECRET!;
         const redirectUri = process.env.POLAR_REDIRECT_URI!;
 
-        // Basic認証
         const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
-        // application/x-www-form-urlencoded
         const params = new URLSearchParams();
         params.append("grant_type", "authorization_code");
         params.append("code", code);
@@ -33,14 +33,16 @@ export async function POST(request: Request) {
         }
 
         const tokenResponse = await res.json();
-        // { access_token, x_user_id, token_type, expires_in, ... }
-
         return NextResponse.json({
             access_token: tokenResponse.access_token,
-            x_user_id: tokenResponse.x_user_id, // Polar側ユーザーID
+            x_user_id: tokenResponse.x_user_id,
         });
-    } catch (error: any) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error(error);
+        }
         return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
     }
 }

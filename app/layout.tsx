@@ -1,4 +1,7 @@
+// app/layout.tsx
+
 import "./globals.css";
+import Link from "next/link";
 
 export const metadata = {
   title: "Polar App",
@@ -17,15 +20,16 @@ export default function RootLayout({
           <div className="max-w-4xl mx-auto flex justify-between items-center">
             <h1 className="font-bold text-lg">Polar Access App</h1>
             <nav>
-              <a href="/" className="ml-4 hover:underline">
+              {/* 修正点: <a>ではなく<Link>を使う */}
+              <Link href="/" className="ml-4 hover:underline">
                 ホーム
-              </a>
-              <a href="/mypage" className="ml-4 hover:underline">
+              </Link>
+              <Link href="/mypage" className="ml-4 hover:underline">
                 マイページ
-              </a>
-              <a href="/history" className="ml-4 hover:underline">
+              </Link>
+              <Link href="/history" className="ml-4 hover:underline">
                 履歴
-              </a>
+              </Link>
             </nav>
           </div>
         </header>

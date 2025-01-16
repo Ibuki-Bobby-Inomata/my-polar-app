@@ -1,10 +1,21 @@
+// app/mypage/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+// Polarユーザー情報の例
+type PolarUserInfo = {
+    "registration-date"?: string;
+    "first-name"?: string;
+    "last-name"?: string;
+    birthdate?: string;
+    gender?: string;
+    // 他に必要なフィールドがあれば追加
+};
+
 export default function MyPage() {
-    const [userInfo, setUserInfo] = useState<any>(null);
+    const [userInfo, setUserInfo] = useState<PolarUserInfo | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -22,11 +33,15 @@ export default function MyPage() {
             body: JSON.stringify({ access_token, x_user_id }),
         })
             .then((res) => res.json())
-            .then((data) => {
-                if (data.error) throw new Error(data.error);
-                setUserInfo(data.userInfo);
+            .then((data: { userInfo?: PolarUserInfo; error?: string }) => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                setUserInfo(data.userInfo || null);
             })
-            .catch((err) => console.error(err));
+            .catch((err: unknown) => {
+                console.error(err);
+            });
     }, [router]);
 
     if (!userInfo) {
@@ -37,7 +52,6 @@ export default function MyPage() {
         );
     }
 
-    // 使用できるキーを確認して表示 (例: registration-date, first-name, etc.)
     return (
         <div className="max-w-md w-full bg-white p-6 rounded shadow text-gray-800">
             <h2 className="text-xl font-bold mb-4">ユーザープロフィール</h2>
@@ -60,7 +74,6 @@ export default function MyPage() {
                     <span className="text-gray-500">性別:</span>
                     <span>{userInfo.gender || "N/A"}</span>
                 </li>
-                {/* 他に必要なら追加 */}
             </ul>
         </div>
     );
