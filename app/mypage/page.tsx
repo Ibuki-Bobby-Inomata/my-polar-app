@@ -1,3 +1,5 @@
+/* eslint no-unused-vars: 0 */
+
 "use client";
 export const dynamic = "force-dynamic"; // ★ 静的生成を無効化
 

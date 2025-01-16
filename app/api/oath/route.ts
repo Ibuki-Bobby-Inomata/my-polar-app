@@ -1,4 +1,6 @@
 // app/api/oauth/route.ts
+/* eslint no-unused-vars: 0 */
+
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
